@@ -16,6 +16,7 @@ class Notepad:
         self._master = master
         self._master.title('Untitled - Notepad')
         self._master.geometry('800x600+500+400')
+        self._master.protocol("WM_DELETE_WINDOW", self.exit_app)
 
         self._current_file_path = None
 
@@ -58,7 +59,9 @@ class Notepad:
         self._text.place(x=0, y=0, relwidth=1, relheight=1)
         self._text.bind('<<Selection>>', self.selection_event_handler)
 
-        self._master.protocol("WM_DELETE_WINDOW", self.exit_app)
+        # When path is given as an argument
+        if len(sys.argv) > 1 and sys.argv[1] and os.path.isfile(sys.argv[1]):
+            self.open_file(file_path=sys.argv[1])
 
     # File tab functions
     def new_file(self, event=None):
@@ -197,8 +200,6 @@ class Notepad:
 def main():
     root = Tk()
     app = Notepad(root)
-    if len(sys.argv) > 1 and sys.argv[1] and os.path.isfile(sys.argv[1]):
-        app.open_file(file_path=sys.argv[1])
     root.mainloop()
 
 
