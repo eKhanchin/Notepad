@@ -5,3 +5,5 @@ Written in Python3 as a personal project.
 
 
 Made by [Eugeny Khanchin](https://github.com/eKhanchin) as an exercise of Python.
+## Screenshot
+<img src="Screenshots/notepad.JPG" width="200">
