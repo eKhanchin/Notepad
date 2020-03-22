@@ -4,4 +4,4 @@ This application is a basic version of Windows 10 Notepad, and can be run on Uni
 Written in Python3 as a personal project.
 
 
-Made by [Eugeny Khanchin](https://github.com/eKhanchin).
+Made by [Eugeny Khanchin](https://github.com/eKhanchin) as an exercise of Python.
