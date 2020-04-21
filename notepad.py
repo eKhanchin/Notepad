@@ -1,5 +1,8 @@
-#!/usr/intel/bin/python -w
+#!/usr/intel/bin/python3 -w
 
+'''
+This is a simple notepad application made as a personal project.
+'''
 
 import sys
 import os
@@ -25,15 +28,23 @@ class Notepad:
 
         # File menu
         filemenu = Menu(menubar, tearoff=0)
-        filemenu.add_command(label=f'{"New": <20} Ctrl+N', command=self.new_file)
+
+        filemenu.add_command(label='New', command=self.new_file)
+        filemenu.entryconfig('New', accelerator='Ctrl+N')
         self._master.bind('<Control-n>', self.new_file)
-        filemenu.add_command(label=f'{"Open": <19} Ctrl+O', command=self.open_file)
+
+        filemenu.add_command(label='Open', command=self.open_file)
+        filemenu.entryconfig('Open', accelerator='Ctrl+O')
         self._master.bind('<Control-o>', self.open_file)
-        filemenu.add_command(label=f'{"Save": <20} Ctrl+S', command=self.save_file)
+
+        filemenu.add_command(label='Save', command=self.save_file)
+        filemenu.entryconfig('Save', accelerator='Ctrl+S')
         self._master.bind('<Control-s>', self.save_file)
+
         filemenu.add_command(label='Save As', command=self.save_as_file)
         filemenu.add_separator()
         filemenu.add_command(label='Exit', command=self.exit_app)
+
         menubar.add_cascade(label='File', menu=filemenu)
 
         # Edit menu
@@ -46,6 +57,14 @@ class Notepad:
 
         self.disable_edit_labels()
 
+        # Tools menu
+        toolsmenu = Menu(menubar, tearoff=0)
+        toolsmenu.add_command(label='Finder', command=self.open_finder)
+        toolsmenu.entryconfig('Finder', accelerator='Ctrl+F')
+        self._master.bind('<Control-f>', self.open_finder)
+
+        menubar.add_cascade(label='Tools', menu=toolsmenu)  
+
         # Help menu
         helpmenu = Menu(menubar, tearoff=0)
         helpmenu.add_command(label='About notepad', command=self.view_about)
@@ -54,10 +73,13 @@ class Notepad:
         # Adds menu bar to the GUI
         self._master.config(menu=menubar)
 
-        # Text field
-        self._text = scrolledtext.ScrolledText(self._master)
+        # Text fields
+        self._text = scrolledtext.ScrolledText(self._master, wrap=None)
         self._text.place(x=0, y=0, relwidth=1, relheight=1)
         self._text.bind('<<Selection>>', self.selection_event_handler)
+
+        # Additional bind keys
+        self._master.bind('<Control-a>', self.select_all)
 
         # When path is given as an argument
         if len(sys.argv) > 1 and sys.argv[1] and os.path.isfile(sys.argv[1]):
@@ -182,19 +204,86 @@ class Notepad:
     def view_about(self):
         # Opens new window with description about this app
         about_window = Toplevel(self._master)
-        about_window.wm_title('About Notepad')
+        about_window.wm_title('Notepad - About Notepad')
 
-        x = self._master.winfo_x()
-        y = self._master.winfo_y()
-        x += 10
-        y += 10
-        about_window.geometry(f'500x150+{x}+{y}')
+        self.define_window_geometry(about_window, 500, 150)
 
         Label(about_window, text='\n'\
             + 'This application is a basic version of Windows 10 Notepad, and can be run on Unix.'\
             + '\nWritten in Python3 as a personal project.'\
             + '\n\n Made by Eugeny Khanchin =]').pack(ipady=20)
     # Help tab functions - end
+
+    def select_all(self, event=None):
+        # Selects all text inside Text widget
+        self._text.tag_add('sel', 1.0, 'end')
+    
+    # Tools tab functions
+    def open_finder(self, event=None):
+        # Creates and opens the Finder window
+        finder_window = Toplevel(self._master)
+        finder_window.wm_title('Notepad - Finder')
+        self.define_window_geometry(finder_window, 374, 115)
+        finder_window.takefocus = True
+
+        finder_window._current_text = None
+
+        Label(finder_window, text='Text to find:').place(x=10, y=10)
+
+        finder_window._finder_entry = ttk.Entry(finder_window, width=50)
+        finder_window._finder_entry.place(x=10, y=30)
+
+        finder_window._find_button = ttk.Button(finder_window, text='Find',\
+           command=lambda: self.find_text(finder_window))
+        finder_window._find_button.place(x=117, y=60, width=60)
+
+        finder_window._cancel_button = ttk.Button(finder_window, text='Cancel',\
+           command=lambda: self.cancel_sub_window(finder_window))
+        finder_window._cancel_button.place(x=197, y=60, width=60)
+
+    def find_text(self, finder_window):
+        text = finder_window._finder_entry.get()
+        if text != finder_window._current_text:
+            # When given text is different from the previous search
+            finder_window._generator = self.find_next_generator(text)
+            finder_window._current_text = text
+
+        if finder_window._generator:
+            try:
+                # Gets next value from the generator
+                (pos, countVar) = next(finder_window._generator)
+            except:
+                # When generator is exhausted, it is recreated again
+                finder_window._generator = self.find_next_generator(text)
+                messagebox.showinfo('Finder Info', 'No more matchings!')
+                finder_window.lift()
+                finder_window.focus_force()
+            else:
+                # Select the matching word in the Text widget
+                self._text.tag_remove('sel', '1.0', 'end')
+                self._text.tag_add('sel', pos, f'{pos} + {countVar}c')
+                self._text.see(pos)
+                
+    def find_next_generator(self, text, start="1.0"):
+        # A generator that creates a iter list of indexes of a matched text
+        countVar = StringVar()
+        pos = self._text.search(text, start, stopindex="end", count=countVar)
+        while pos:
+            yield (pos, countVar.get())
+            start = f'{pos} + {countVar.get()}c'
+            pos = self._text.search(text, start, stopindex="end", count=countVar)
+    # Tools tab functions - end
+
+    def define_window_geometry(self, window, width, height):
+        # Defines geometry of the given sub window
+        x = self._master.winfo_x()
+        y = self._master.winfo_y()
+        x += 10
+        y += 10
+        window.geometry(f'{width}x{height}+{x}+{y}')
+
+    def cancel_sub_window(self, window):
+        window.destroy()
 
 
 def main():
