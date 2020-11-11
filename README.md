@@ -6,4 +6,4 @@ Written in Python3.
 
 Made by [Eugeny Khanchin](https://github.com/eKhanchin) as a personal project.
 ## Screenshot
-<img src="Screenshots/notepad.JPG" width="200">
+<img src="screenshots/notepad.JPG" width="200">
